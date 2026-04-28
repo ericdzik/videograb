@@ -352,9 +352,9 @@
         const fileUrl = `/api/file/${encodeURIComponent(json.filename)}`;
         const box = document.getElementById('successBox');
         box.innerHTML = `
-          <div style="margin-bottom:10px">✅ <strong>${json.title}</strong> est prêt !</div>
-          <button onclick="saveToGallery('${fileUrl}', '${json.filename}')" style="width:100%;padding:12px;border-radius:10px;background:linear-gradient(135deg,#4ecdc4,#44a08d);font-size:0.95rem;margin-bottom:8px">
-            📥 Enregistrer dans la galerie
+          <div style="margin-bottom:10px"> <strong>${json.title}</strong> est prêt !</div>
+          <button class="btn-save" onclick="saveToGallery('${fileUrl}', '${json.filename}')" style="width:100%;padding:12px;border-radius:10px;background:linear-gradient(135deg,#4ecdc4,#44a08d);font-size:0.95rem;margin-bottom:8px">
+             Enregistrer dans la galerie
           </button>
           <a href="${fileUrl}" download="${json.filename}" style="display:block;text-align:center;color:#888;font-size:0.8rem;text-decoration:underline">
             Télécharger le fichier directement
@@ -373,29 +373,41 @@
       if (e.key === 'Enter') fetchInfo();
     });
 
+    let sharingInProgress = false;
+
     async function saveToGallery(url, filename) {
+      if (sharingInProgress) return;
+      sharingInProgress = true;
+
+      const btn = document.querySelector('.btn-save');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = ' Chargement...';
+      btn.disabled = true;
+
       try {
-        // Télécharge le fichier en blob
         const res = await fetch(url);
         const blob = await res.blob();
         const file = new File([blob], filename, { type: 'video/mp4' });
 
-        // iPhone/Android : Web Share API (enregistre dans la galerie)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          btn.innerHTML = ' Ouvre le menu → choisis "Enregistrer la vidéo"';
           await navigator.share({ files: [file], title: filename });
-          return;
+        } else {
+          // Desktop fallback
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(a.href);
         }
-
-        // Fallback desktop : téléchargement classique
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
       } catch (e) {
         if (e.name !== 'AbortError') {
-          showError('Erreur lors de l\'enregistrement : ' + e.message);
+          showError('Erreur : ' + e.message);
         }
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        sharingInProgress = false;
       }
     }
   </script>
