@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Downloader</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    .logo {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fe2c55, #25f4ee, #1877f2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 36px;
+    }
+
+    .platforms {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .platform-badge {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .tiktok  { background: #fe2c5520; color: #fe2c55; border: 1px solid #fe2c5540; }
+    .snap    { background: #fffc0020; color: #fffc00; border: 1px solid #fffc0040; }
+    .facebook{ background: #1877f220; color: #1877f2; border: 1px solid #1877f240; }
+
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #e0e0e0;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus { border-color: #6c63ff; }
+    input[type="text"]::placeholder { color: #555; }
+
+    button {
+      background: linear-gradient(135deg, #6c63ff, #4ecdc4);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 22px;
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    button:hover { opacity: 0.9; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 24px 0;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #2a2a4a;
+      border-top-color: #6c63ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .preview {
+      display: none;
+      margin-top: 24px;
+    }
+
+    .preview-inner {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .thumb {
+      width: 120px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+      background: #0f0f1a;
+    }
+
+    .thumb-placeholder {
+      width: 120px;
+      height: 80px;
+      border-radius: 8px;
+      background: #2a2a4a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      flex-shrink: 0;
+    }
+
+    .meta { flex: 1; }
+    .meta h3 { font-size: 0.95rem; margin-bottom: 4px; line-height: 1.4; }
+    .meta .info { font-size: 0.78rem; color: #888; margin-bottom: 12px; }
+
+    .format-select {
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #e0e0e0;
+      font-size: 0.85rem;
+      width: 100%;
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    .btn-download {
+      background: linear-gradient(135deg, #fe2c55, #ff6b35);
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+    }
+
+    .error {
+      display: none;
+      background: #ff4d4d15;
+      border: 1px solid #ff4d4d40;
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #ff6b6b;
+      font-size: 0.85rem;
+      margin-top: 16px;
+    }
+
+    .success {
+      display: none;
+      background: #4ecdc415;
+      border: 1px solid #4ecdc440;
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: #4ecdc4;
+      font-size: 0.85rem;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .success a {
+      color: #4ecdc4;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    .footer {
+      margin-top: 40px;
+      color: #444;
+      font-size: 0.78rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">⬇ VideoGrab</div>
+  <p class="subtitle">Télécharge des vidéos depuis tes plateformes préférées</p>
+
+  <div class="platforms">
+    <span class="platform-badge tiktok">TikTok</span>
+    <span class="platform-badge snap">Snapchat</span>
+    <span class="platform-badge facebook">Facebook</span>
+  </div>
+
+  <div class="card">
+    <div class="input-row">
+      <input type="text" id="urlInput" placeholder="Colle le lien de la vidéo ici..." />
+      <button id="fetchBtn" onclick="fetchInfo()">Analyser</button>
+    </div>
+
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <span id="loaderText">Analyse en cours...</span>
+    </div>
+
+    <div class="error" id="errorBox"></div>
+
+    <div class="preview" id="preview">
+      <div class="preview-inner">
+        <div id="thumbContainer"></div>
+        <div class="meta">
+          <h3 id="videoTitle"></h3>
+          <p class="info" id="videoInfo"></p>
+          <select class="format-select" id="formatSelect"></select>
+          <button class="btn-download" id="dlBtn" onclick="startDownload()">⬇ Télécharger</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="success" id="successBox"></div>
+  </div>
+
+  <p class="footer">Usage personnel uniquement · Respecte les CGU des plateformes</p>
+
+  <script>
+    let currentUrl = '';
+
+    function showLoader(text) {
+      document.getElementById('loader').style.display = 'block';
+      document.getElementById('loaderText').textContent = text;
+      document.getElementById('preview').style.display = 'none';
+      document.getElementById('errorBox').style.display = 'none';
+      document.getElementById('successBox').style.display = 'none';
+    }
+
+    function hideLoader() {
+      document.getElementById('loader').style.display = 'none';
+    }
+
+    function showError(msg) {
+      const box = document.getElementById('errorBox');
+      box.textContent = '⚠ ' + msg;
+      box.style.display = 'block';
+    }
+
+    function formatDuration(secs) {
+      if (!secs) return '';
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    async function fetchInfo() {
+      const url = document.getElementById('urlInput').value.trim();
+      if (!url) return;
+      currentUrl = url;
+
+      document.getElementById('fetchBtn').disabled = true;
+      showLoader('Analyse en cours...');
+
+      try {
+        const res = await fetch('/api/info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.detail || 'Erreur inconnue');
+
+        const d = json.data;
+        hideLoader();
+
+        // thumbnail
+        const thumbContainer = document.getElementById('thumbContainer');
+        if (d.thumbnail) {
+          thumbContainer.innerHTML = `<img class="thumb" src="${d.thumbnail}" onerror="this.parentElement.innerHTML='<div class=thumb-placeholder>🎬</div>'" />`;
+        } else {
+          thumbContainer.innerHTML = `<div class="thumb-placeholder">🎬</div>`;
+        }
+
+        document.getElementById('videoTitle').textContent = d.title;
+        const dur = formatDuration(d.duration);
+        document.getElementById('videoInfo').textContent =
+          [d.platform, d.uploader, dur].filter(Boolean).join(' · ');
+
+        // formats
+        const sel = document.getElementById('formatSelect');
+        sel.innerHTML = '<option value="best">Meilleure qualité (auto)</option>';
+        d.formats.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f.format_id;
+          opt.textContent = `${f.label} (.${f.ext})`;
+          sel.appendChild(opt);
+        });
+
+        document.getElementById('preview').style.display = 'block';
+      } catch (e) {
+        hideLoader();
+        showError(e.message);
+      } finally {
+        document.getElementById('fetchBtn').disabled = false;
+      }
+    }
+
+    async function startDownload() {
+      const format_id = document.getElementById('formatSelect').value;
+      document.getElementById('dlBtn').disabled = true;
+      showLoader('Téléchargement en cours...');
+      document.getElementById('preview').style.display = 'none';
+
+      try {
+        const res = await fetch('/api/download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: currentUrl, format_id })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.detail || 'Erreur inconnue');
+
+        hideLoader();
+        document.getElementById('preview').style.display = 'block';
+
+        const box = document.getElementById('successBox');
+        box.innerHTML = ` Prêt ! <a href="/api/file/${encodeURIComponent(json.filename)}" download="${json.filename}">Cliquer ici pour télécharger</a>`;
+        box.style.display = 'block';
+      } catch (e) {
+        hideLoader();
+        document.getElementById('preview').style.display = 'block';
+        showError(e.message);
+      } finally {
+        document.getElementById('dlBtn').disabled = false;
+      }
+    }
+
+    document.getElementById('urlInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') fetchInfo();
+    });
+  </script>
+</body>
+</html>
