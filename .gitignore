@@ -2,9 +2,9 @@ downloads/
 __pycache__/
 *.pyc
 *.xz
-ffmpeg.exe
-ffmpeg-8.1/
-ffmpeg-8.1-essentials_build/
+*.zip
+*.exe
+ffmpeg*/
 .env
 ffmpeg-8.1-essentials_build/
 *.zip
