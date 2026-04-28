@@ -6,8 +6,9 @@ from pathlib import Path
 DOWNLOAD_DIR = Path("downloads")
 DOWNLOAD_DIR.mkdir(exist_ok=True)
 
-# Chemin local vers ffmpeg.exe (dans le dossier du projet)
-FFMPEG_PATH = str(Path(__file__).parent / "ffmpeg.exe")
+# Utilise ffmpeg local sur Windows, système sur Linux (Railway)
+_local_ffmpeg = Path(__file__).parent / "ffmpeg.exe"
+FFMPEG_PATH = str(_local_ffmpeg) if _local_ffmpeg.exists() else "ffmpeg"
 
 
 def sanitize_filename(name: str) -> str:
