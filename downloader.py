@@ -1,6 +1,7 @@
 import yt_dlp
 import os
 import re
+import uuid
 from pathlib import Path
 
 DOWNLOAD_DIR = Path("downloads")
@@ -9,10 +10,6 @@ DOWNLOAD_DIR.mkdir(exist_ok=True)
 # Utilise ffmpeg local sur Windows, système sur Linux (Railway)
 _local_ffmpeg = Path(__file__).parent / "ffmpeg.exe"
 FFMPEG_PATH = str(_local_ffmpeg) if _local_ffmpeg.exists() else "ffmpeg"
-
-
-def sanitize_filename(name: str) -> str:
-    return re.sub(r'[\\/*?:"<>|]', "_", name)
 
 
 def get_video_info(url: str) -> dict:
@@ -45,27 +42,32 @@ def get_video_info(url: str) -> dict:
 
 
 def download_video(url: str, format_id: str = "best") -> dict:
+    # Utilise un nom de fichier unique (UUID) pour éviter tout problème
+    # de caractères spéciaux, espaces, emojis dans le titre
+    file_id = str(uuid.uuid4())
+    output_path = str(DOWNLOAD_DIR / f"{file_id}.mp4")
+
     fmt = format_id if format_id != "best" else "bestvideo+bestaudio/best"
+
     ydl_opts = {
         "format": fmt,
-        "outtmpl": str(DOWNLOAD_DIR / "%(title)s.%(ext)s"),
+        "outtmpl": output_path,
         "quiet": True,
         "no_warnings": True,
         "merge_output_format": "mp4",
         "ffmpeg_location": FFMPEG_PATH,
-        "postprocessors": [{
-            "key": "FFmpegVideoConvertor",
-            "preferedformat": "mp4",
-        }],
     }
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
-        filename = ydl.prepare_filename(info)
-        # handle merged mp4
-        if not os.path.exists(filename):
-            filename = filename.rsplit(".", 1)[0] + ".mp4"
-        return {
-            "title": info.get("title", "video"),
-            "filename": os.path.basename(filename),
-            "filepath": filename,
-        }
+        title = info.get("title", "video")
+
+    # Le fichier est toujours à output_path car on a forcé le nom
+    if not os.path.exists(output_path):
+        raise FileNotFoundError(f"Le fichier téléchargé est introuvable : {output_path}")
+
+    return {
+        "title": title,
+        "filename": f"{file_id}.mp4",
+        "filepath": output_path,
+    }
