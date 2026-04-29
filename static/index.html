@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Video Downloader</title>
+  <title>VideoGrab</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -23,21 +23,14 @@
       font-weight: 800;
       background: linear-gradient(135deg, #fe2c55, #25f4ee, #1877f2);
       -webkit-background-clip: text;
+      background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 6px;
     }
 
-    .subtitle {
-      color: #888;
-      font-size: 0.9rem;
-      margin-bottom: 36px;
-    }
+    .subtitle { color: #888; font-size: 0.9rem; margin-bottom: 36px; }
 
-    .platforms {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 32px;
-    }
+    .platforms { display: flex; gap: 10px; margin-bottom: 32px; flex-wrap: wrap; justify-content: center; }
 
     .platform-badge {
       padding: 6px 14px;
@@ -46,24 +39,21 @@
       font-weight: 600;
     }
 
-    .tiktok  { background: #fe2c5520; color: #fe2c55; border: 1px solid #fe2c5540; }
-    .snap    { background: #fffc0020; color: #fffc00; border: 1px solid #fffc0040; }
-    .facebook{ background: #1877f220; color: #1877f2; border: 1px solid #1877f240; }
-    .youtube { background: #ff000020; color: #ff4444; border: 1px solid #ff000040; }
+    .tiktok   { background: #fe2c5520; color: #fe2c55; border: 1px solid #fe2c5540; }
+    .snap     { background: #fffc0020; color: #fffc00; border: 1px solid #fffc0040; }
+    .facebook { background: #1877f220; color: #1877f2; border: 1px solid #1877f240; }
+    .youtube  { background: #ff000020; color: #ff4444; border: 1px solid #ff000040; }
 
     .card {
       background: #1a1a2e;
       border: 1px solid #2a2a4a;
       border-radius: 16px;
-      padding: 32px;
+      padding: 28px;
       width: 100%;
       max-width: 600px;
     }
 
-    .input-row {
-      display: flex;
-      gap: 10px;
-    }
+    .input-row { display: flex; gap: 10px; }
 
     input[type="text"] {
       flex: 1;
@@ -75,6 +65,7 @@
       font-size: 0.95rem;
       outline: none;
       transition: border-color 0.2s;
+      min-width: 0;
     }
 
     input[type="text"]:focus { border-color: #6c63ff; }
@@ -97,13 +88,7 @@
     button:active { transform: translateY(0); }
     button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    .loader {
-      display: none;
-      text-align: center;
-      padding: 24px 0;
-      color: #888;
-      font-size: 0.9rem;
-    }
+    .loader { display: none; text-align: center; padding: 24px 0; color: #888; font-size: 0.9rem; }
 
     .spinner {
       width: 36px; height: 36px;
@@ -114,22 +99,36 @@
       margin: 0 auto 12px;
     }
 
+    .progress-bar-wrap {
+      background: #2a2a4a;
+      border-radius: 6px;
+      height: 6px;
+      margin: 10px 0 6px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #6c63ff, #4ecdc4);
+      border-radius: 6px;
+      width: 0%;
+      transition: width 0.4s ease;
+      animation: indeterminate 1.5s infinite;
+    }
+
+    @keyframes indeterminate {
+      0%   { margin-left: -30%; width: 30%; }
+      100% { margin-left: 100%; width: 30%; }
+    }
+
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .preview {
-      display: none;
-      margin-top: 24px;
-    }
+    .preview { display: none; margin-top: 24px; }
 
-    .preview-inner {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-    }
+    .preview-inner { display: flex; gap: 16px; align-items: flex-start; }
 
     .thumb {
-      width: 120px;
-      height: 80px;
+      width: 110px; height: 75px;
       object-fit: cover;
       border-radius: 8px;
       flex-shrink: 0;
@@ -137,8 +136,7 @@
     }
 
     .thumb-placeholder {
-      width: 120px;
-      height: 80px;
+      width: 110px; height: 75px;
       border-radius: 8px;
       background: #2a2a4a;
       display: flex;
@@ -148,9 +146,9 @@
       flex-shrink: 0;
     }
 
-    .meta { flex: 1; }
-    .meta h3 { font-size: 0.95rem; margin-bottom: 4px; line-height: 1.4; }
-    .meta .info { font-size: 0.78rem; color: #888; margin-bottom: 12px; }
+    .meta { flex: 1; min-width: 0; }
+    .meta h3 { font-size: 0.9rem; margin-bottom: 4px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .meta .info { font-size: 0.75rem; color: #888; margin-bottom: 12px; }
 
     .format-select {
       background: #0f0f1a;
@@ -172,6 +170,29 @@
       font-size: 0.95rem;
     }
 
+    .btn-save {
+      background: linear-gradient(135deg, #4ecdc4, #44a08d);
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 1rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .btn-direct {
+      background: #2a2a4a;
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      color: #aaa;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      font-weight: 600;
+    }
+
     .error {
       display: none;
       background: #ff4d4d15;
@@ -188,24 +209,21 @@
       background: #4ecdc415;
       border: 1px solid #4ecdc440;
       border-radius: 10px;
-      padding: 12px 16px;
+      padding: 16px;
       color: #4ecdc4;
       font-size: 0.85rem;
       margin-top: 16px;
-      text-align: center;
     }
 
-    .success a {
-      color: #4ecdc4;
-      font-weight: 700;
-      text-decoration: underline;
-    }
+    .footer { margin-top: 40px; color: #444; font-size: 0.78rem; text-align: center; }
 
-    .footer {
-      margin-top: 40px;
-      color: #444;
-      font-size: 0.78rem;
+    /* Mobile hint */
+    .mobile-hint {
+      font-size: 0.75rem;
+      color: #666;
+      margin-top: 8px;
       text-align: center;
+      display: none;
     }
   </style>
 </head>
@@ -223,12 +241,13 @@
 
   <div class="card">
     <div class="input-row">
-      <input type="text" id="urlInput" placeholder="Colle le lien de la vidéo ici..." />
+      <input type="text" id="urlInput" placeholder="Colle le lien de la vidéo ici..." autocomplete="off" autocorrect="off" />
       <button id="fetchBtn" onclick="fetchInfo()">Analyser</button>
     </div>
 
     <div class="loader" id="loader">
       <div class="spinner"></div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
       <span id="loaderText">Analyse en cours...</span>
     </div>
 
@@ -253,6 +272,8 @@
 
   <script>
     let currentUrl = '';
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     function showLoader(text) {
       document.getElementById('loader').style.display = 'block';
@@ -299,7 +320,6 @@
         const d = json.data;
         hideLoader();
 
-        // thumbnail
         const thumbContainer = document.getElementById('thumbContainer');
         if (d.thumbnail) {
           thumbContainer.innerHTML = `<img class="thumb" src="${d.thumbnail}" onerror="this.parentElement.innerHTML='<div class=thumb-placeholder>🎬</div>'" />`;
@@ -312,7 +332,6 @@
         document.getElementById('videoInfo').textContent =
           [d.platform, d.uploader, dur].filter(Boolean).join(' · ');
 
-        // formats
         const sel = document.getElementById('formatSelect');
         sel.innerHTML = '<option value="best">Meilleure qualité (auto)</option>';
         d.formats.forEach(f => {
@@ -334,32 +353,58 @@
     async function startDownload() {
       const format_id = document.getElementById('formatSelect').value;
       document.getElementById('dlBtn').disabled = true;
-      showLoader('Téléchargement en cours...');
+      showLoader('Démarrage du téléchargement...');
       document.getElementById('preview').style.display = 'none';
 
       try {
-        const res = await fetch('/api/download', {
+        // 1. Lance le job en arrière-plan
+        const startRes = await fetch('/api/download/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: currentUrl, format_id })
         });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.detail || 'Erreur inconnue');
+        const startJson = await startRes.json();
+        if (!startRes.ok) throw new Error(startJson.detail || 'Erreur inconnue');
+
+        const jobId = startJson.job_id;
+
+        // 2. Polling toutes les 2 secondes
+        let dots = 0;
+        const messages = [
+          'Téléchargement en cours',
+          'Traitement de la vidéo',
+          'Presque prêt',
+        ];
+        const result = await new Promise((resolve, reject) => {
+          const interval = setInterval(async () => {
+            try {
+              dots = (dots + 1) % 3;
+              document.getElementById('loaderText').textContent =
+                messages[dots] + '...';
+
+              const statusRes = await fetch(`/api/download/status/${jobId}`);
+              const status = await statusRes.json();
+
+              if (status.status === 'done') {
+                clearInterval(interval);
+                resolve(status);
+              } else if (status.status === 'error') {
+                clearInterval(interval);
+                reject(new Error(status.error));
+              }
+            } catch (e) {
+              clearInterval(interval);
+              reject(e);
+            }
+          }, 2000);
+        });
 
         hideLoader();
         document.getElementById('preview').style.display = 'block';
 
-        const fileUrl = `/api/file/${encodeURIComponent(json.filename)}`;
-        const box = document.getElementById('successBox');
-        box.innerHTML = `
-          <div style="margin-bottom:10px"> <strong>${json.title}</strong> est prêt !</div>
-          <button class="btn-save" onclick="saveToGallery('${fileUrl}', '${json.filename}')" style="width:100%;padding:12px;border-radius:10px;background:linear-gradient(135deg,#4ecdc4,#44a08d);font-size:0.95rem;margin-bottom:8px">
-             Enregistrer dans la galerie
-          </button>
-          <a href="${fileUrl}" download="${json.filename}" style="display:block;text-align:center;color:#888;font-size:0.8rem;text-decoration:underline">
-            Télécharger le fichier directement
-          </a>`;
-        box.style.display = 'block';
+        const fileUrl = `/api/file/${encodeURIComponent(result.filename)}`;
+        showSuccessButtons(fileUrl, result.filename, result.title);
+
       } catch (e) {
         hideLoader();
         document.getElementById('preview').style.display = 'block';
@@ -369,20 +414,42 @@
       }
     }
 
-    document.getElementById('urlInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') fetchInfo();
-    });
+    function showSuccessButtons(fileUrl, filename, title) {
+      const box = document.getElementById('successBox');
 
-    let sharingInProgress = false;
+      // Sur iOS : lien direct (Safari gère le téléchargement nativement depuis iOS 13+)
+      // Sur Android : lien direct avec attribut download
+      // Web Share API en bonus si disponible
 
-    async function saveToGallery(url, filename) {
-      if (sharingInProgress) return;
-      sharingInProgress = true;
+      let html = `<div style="margin-bottom:12px;font-weight:600">✅ ${title || 'Vidéo'} est prête !</div>`;
 
-      const btn = document.querySelector('.btn-save');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = ' Chargement...';
+      if (isMobile && navigator.share) {
+        html += `<button class="btn-save" id="shareBtn">📤 Partager / Enregistrer dans la galerie</button>`;
+      }
+
+      html += `<a class="btn-direct" href="${fileUrl}" download="${filename}">⬇ Télécharger la vidéo</a>`;
+
+      if (isIOS) {
+        html += `<p style="font-size:0.72rem;color:#666;margin-top:8px;text-align:center">
+          Sur iPhone : appuie sur "Télécharger la vidéo" → puis icône de partage → "Enregistrer la vidéo"
+        </p>`;
+      }
+
+      box.innerHTML = html;
+      box.style.display = 'block';
+
+      // Attache l'event au bouton share si présent
+      const shareBtn = document.getElementById('shareBtn');
+      if (shareBtn) {
+        shareBtn.addEventListener('click', () => shareFile(fileUrl, filename));
+      }
+    }
+
+    async function shareFile(url, filename) {
+      const btn = document.getElementById('shareBtn');
+      if (!btn || btn.disabled) return;
       btn.disabled = true;
+      btn.textContent = '⏳ Chargement...';
 
       try {
         const res = await fetch(url);
@@ -390,10 +457,9 @@
         const file = new File([blob], filename, { type: 'video/mp4' });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          btn.innerHTML = ' Ouvre le menu → choisis "Enregistrer la vidéo"';
           await navigator.share({ files: [file], title: filename });
         } else {
-          // Desktop fallback
+          // Fallback : lien direct
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
           a.download = filename;
@@ -401,15 +467,18 @@
           URL.revokeObjectURL(a.href);
         }
       } catch (e) {
-        if (e.name !== 'AbortError') {
-          showError('Erreur : ' + e.message);
-        }
+        if (e.name !== 'AbortError') showError('Erreur : ' + e.message);
       } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        sharingInProgress = false;
+        if (btn) {
+          btn.textContent = '📤 Partager / Enregistrer dans la galerie';
+          btn.disabled = false;
+        }
       }
     }
+
+    document.getElementById('urlInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') fetchInfo();
+    });
   </script>
 </body>
 </html>
