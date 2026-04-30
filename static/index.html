@@ -236,7 +236,6 @@
     <span class="platform-badge tiktok">TikTok</span>
     <span class="platform-badge snap">Snapchat</span>
     <span class="platform-badge facebook">Facebook</span>
-    <span class="platform-badge youtube">YouTube</span>
   </div>
 
   <div class="card">
@@ -417,10 +416,6 @@
     function showSuccessButtons(fileUrl, filename, title) {
       const box = document.getElementById('successBox');
 
-      // Sur iOS : lien direct (Safari gère le téléchargement nativement depuis iOS 13+)
-      // Sur Android : lien direct avec attribut download
-      // Web Share API en bonus si disponible
-
       let html = `<div style="margin-bottom:12px;font-weight:600">✅ ${title || 'Vidéo'} est prête !</div>`;
 
       if (isMobile && navigator.share) {
@@ -435,10 +430,29 @@
         </p>`;
       }
 
+      html += `<p id="countdown" style="font-size:0.72rem;color:#666;margin-top:10px;text-align:center">
+        🕐 Fichier disponible pendant <span id="timer">10:00</span>
+      </p>`;
+
       box.innerHTML = html;
       box.style.display = 'block';
 
-      // Attache l'event au bouton share si présent
+      // Compte à rebours 10 minutes
+      let seconds = 600;
+      const timerEl = document.getElementById('timer');
+      const countdownInterval = setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+          clearInterval(countdownInterval);
+          timerEl.parentElement.textContent = '⚠ Fichier expiré — relance le téléchargement';
+          timerEl.parentElement.style.color = '#ff6b6b';
+          return;
+        }
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+      }, 1000);
+
       const shareBtn = document.getElementById('shareBtn');
       if (shareBtn) {
         shareBtn.addEventListener('click', () => shareFile(fileUrl, filename));

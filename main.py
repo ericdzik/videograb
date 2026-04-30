@@ -14,6 +14,18 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Stockage en mémoire des jobs { job_id: { status, filename, title, error } }
 jobs: dict = {}
 
+FILE_TTL = 600  # secondes avant suppression du fichier (10 min)
+
+
+async def delete_after(filepath: str, delay: int = FILE_TTL):
+    """Supprime le fichier après `delay` secondes."""
+    await asyncio.sleep(delay)
+    try:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+    except Exception:
+        pass
+
 
 class URLRequest(BaseModel):
     url: str
@@ -52,6 +64,8 @@ async def download_start(req: DownloadRequest):
             jobs[job_id]["status"] = "done"
             jobs[job_id]["filename"] = result["filename"]
             jobs[job_id]["title"] = result["title"]
+            # Supprime le fichier automatiquement après 10 min
+            asyncio.create_task(delete_after(result["filepath"]))
         except Exception as e:
             jobs[job_id]["status"] = "error"
             jobs[job_id]["error"] = str(e)

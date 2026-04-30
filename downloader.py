@@ -11,9 +11,28 @@ DOWNLOAD_DIR.mkdir(exist_ok=True)
 _local_ffmpeg = Path(__file__).parent / "ffmpeg.exe"
 FFMPEG_PATH = str(_local_ffmpeg) if _local_ffmpeg.exists() else "ffmpeg"
 
+# Cookies YouTube — fichier local ou variable d'environnement (Railway)
+_cookies_file = Path(__file__).parent / "cookies.txt"
+if _cookies_file.exists():
+    COOKIES_PATH = str(_cookies_file)
+elif os.environ.get("YOUTUBE_COOKIES"):
+    # Sur Railway : colle le contenu du cookies.txt dans la variable YOUTUBE_COOKIES
+    COOKIES_PATH = str(DOWNLOAD_DIR / "_cookies.txt")
+    with open(COOKIES_PATH, "w") as f:
+        f.write(os.environ["YOUTUBE_COOKIES"])
+else:
+    COOKIES_PATH = None
+
 
 def get_video_info(url: str) -> dict:
-    ydl_opts = {"quiet": True, "no_warnings": True, "skip_download": True}
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "extractor_args": {"youtube": {"player_client": ["mweb", "web"]}},
+    }
+    if COOKIES_PATH:
+        ydl_opts["cookiefile"] = COOKIES_PATH
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         formats = []
@@ -72,7 +91,10 @@ def download_video(url: str, format_id: str = "best") -> dict:
         "no_warnings": True,
         "merge_output_format": "mp4",
         "ffmpeg_location": FFMPEG_PATH,
+        "extractor_args": {"youtube": {"player_client": ["mweb", "web"]}},
     }
+    if COOKIES_PATH:
+        ydl_opts["cookiefile"] = COOKIES_PATH
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
