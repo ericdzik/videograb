@@ -19,18 +19,27 @@ def get_video_info(url: str) -> dict:
         formats = []
         seen = set()
         for f in info.get("formats", []):
-            label = None
-            if f.get("vcodec") != "none" and f.get("height"):
+            # Garde uniquement les formats qui ont vidéo ET audio ensemble
+            # (pas les formats séparés qui nécessitent un merge)
+            has_video = f.get("vcodec") != "none" and f.get("height")
+            has_audio = f.get("acodec") != "none"
+            if has_video and has_audio:
                 label = f"{f['height']}p"
-            elif f.get("acodec") != "none" and f.get("vcodec") == "none":
-                label = "audio only"
-            if label and label not in seen:
-                seen.add(label)
-                formats.append({
-                    "format_id": f["format_id"],
-                    "label": label,
-                    "ext": f.get("ext", "mp4"),
-                })
+                if label not in seen:
+                    seen.add(label)
+                    formats.append({
+                        "format_id": f["format_id"],
+                        "label": label,
+                        "ext": f.get("ext", "mp4"),
+                    })
+
+        # Si aucun format combiné trouvé (ex: YouTube), on propose des options génériques
+        if not formats:
+            formats = [
+                {"format_id": "best[ext=mp4]", "label": "Meilleure qualité MP4", "ext": "mp4"},
+                {"format_id": "worst[ext=mp4]", "label": "Qualité réduite MP4", "ext": "mp4"},
+            ]
+
         return {
             "title": info.get("title", "video"),
             "thumbnail": info.get("thumbnail"),
@@ -42,12 +51,19 @@ def get_video_info(url: str) -> dict:
 
 
 def download_video(url: str, format_id: str = "best") -> dict:
-    # Utilise un nom de fichier unique (UUID) pour éviter tout problème
-    # de caractères spéciaux, espaces, emojis dans le titre
     file_id = str(uuid.uuid4())
     output_path = str(DOWNLOAD_DIR / f"{file_id}.mp4")
 
-    fmt = format_id if format_id != "best" else "bestvideo+bestaudio/best"
+    # Stratégie de format robuste :
+    # - Si format_id spécifique → on essaie, avec fallback sur best mp4
+    # - Si "best" → on prend le meilleur format avec vidéo+audio déjà combinés
+    if format_id == "best":
+        fmt = "best[ext=mp4]/best"
+    elif format_id in ("best[ext=mp4]", "worst[ext=mp4]"):
+        fmt = format_id
+    else:
+        # Format spécifique sélectionné par l'utilisateur, fallback si indispo
+        fmt = f"{format_id}/best[ext=mp4]/best"
 
     ydl_opts = {
         "format": fmt,
@@ -62,7 +78,6 @@ def download_video(url: str, format_id: str = "best") -> dict:
         info = ydl.extract_info(url, download=True)
         title = info.get("title", "video")
 
-    # Le fichier est toujours à output_path car on a forcé le nom
     if not os.path.exists(output_path):
         raise FileNotFoundError(f"Le fichier téléchargé est introuvable : {output_path}")
 
